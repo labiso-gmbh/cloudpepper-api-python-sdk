@@ -21,6 +21,12 @@ dependencies = [
     "pydantic",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-httpx",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/labiso-gmbh/cloudpepper-api-python-sdk"
 "Bug Tracker" = "https://github.com/labiso-gmbh/cloudpepper-api-python-sdk/issues"
