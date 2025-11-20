@@ -1,5 +1,6 @@
 import httpx
 from .resources.servers import Servers
+from .resources.instances import Instances
 
 class Cloudpepper:
     def __init__(self, api_key: str, base_url: str = "https://api.cloudpepper.com/v1"):
@@ -13,3 +14,4 @@ class Cloudpepper:
             base_url=self.base_url
         )
         self.servers = Servers(self)
+        self.instances = Instances(self)
