@@ -6,6 +6,16 @@ class Server(BaseModel):
     name: str
     status: str
 
+class ServerCreate(BaseModel):
+    type: str
+    region: str
+    plan: Optional[str]
+    size: Optional[str]
+    instance_type: Optional[str]
+    config: Dict[str, Any]
+    ssh: Optional[Dict[str, Any]]
+
+
 class ServerDetail(Server):
     provider: str
     provider_id: str
