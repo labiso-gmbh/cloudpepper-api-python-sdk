@@ -1,6 +1,7 @@
 import httpx
 from .resources.servers import Servers
 from .resources.instances import Instances
+from .resources.backups import Backups, BackupSchedules, BackupProviders
 
 class Cloudpepper:
     def __init__(self, api_key: str, base_url: str = "https://api.cloudpepper.com/v1"):
@@ -15,3 +16,6 @@ class Cloudpepper:
         )
         self.servers = Servers(self)
         self.instances = Instances(self)
+        self.backups = Backups(self)
+        self.backup_schedules = BackupSchedules(self)
+        self.backup_providers = BackupProviders(self)
