@@ -34,6 +34,13 @@ class Instance(BaseModel):
     status: str
     server_id: str
 
+class InstanceCreate(BaseModel):
+    server_id: str
+    backup_id: Optional[str]
+    parent_id: Optional[str]
+    config: Dict[str, Any]
+    options: Optional[Dict[str, Any]]
+
 class InstanceDetail(Instance):
     features: Dict[str, Any]
     modules: List[Dict[str, Any]]
