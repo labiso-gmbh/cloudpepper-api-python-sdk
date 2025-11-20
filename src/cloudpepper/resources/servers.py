@@ -1,21 +1,24 @@
+from typing import List
 from ..client import Cloudpepper
 from .base import APIResource
+from ..models import Server, ServerDetail, ServerCreate
 
 class Servers(APIResource):
     def __init__(self, client: Cloudpepper):
         super().__init__(client.client)
 
-    async def list(self):
-        return await self._get("/servers")
+    async def list(self) -> List[Server]:
+        data = await self._get("/servers")
+        return [Server(**item) for item in data]
 
-    async def create(self, **kwargs):
-        return await self._post("/servers", json=kwargs)
+    async def create(self, server: ServerCreate) -> ServerDetail:
+        return ServerDetail(**await self._post("/servers", json=server.dict()))
 
-    async def get(self, server_id: str):
-        return await self._get(f"/servers/{server_id}")
+    async def get(self, server_id: str) -> ServerDetail:
+        return ServerDetail(**await self._get(f"/servers/{server_id}"))
 
-    async def update(self, server_id: str, **kwargs):
-        return await self._patch(f"/servers/{server_id}", json=kwargs)
+    async def update(self, server_id: str, **kwargs) -> ServerDetail:
+        return ServerDetail(**await self._patch(f"/servers/{server_id}", json=kwargs))
 
     async def delete(self, server_id: str):
         return await self._delete(f"/servers/{server_id}")
