@@ -1,10 +1,14 @@
-from typing import List
-from ..client import Cloudpepper
+from __future__ import annotations
+from typing import List, Dict, Any, TYPE_CHECKING
 from .base import APIResource
 from ..models import User
 
+if TYPE_CHECKING:
+    from ..client import Cloudpepper
+
+
 class Users(APIResource):
-    def __init__(self, client: Cloudpepper):
+    def __init__(self, client: "Cloudpepper"):
         super().__init__(client.client)
 
     async def list(self) -> List[User]:
@@ -20,8 +24,8 @@ class Users(APIResource):
     async def update(self, user_id: str, **kwargs) -> User:
         return User(**await self._put(f"/users/{user_id}", json=kwargs))
 
-    async def delete(self, user_id: str):
+    async def delete(self, user_id: str) -> Dict[str, Any]:
         return await self._delete(f"/users/{user_id}")
 
-    async def reset_password(self, user_id: str):
+    async def reset_password(self, user_id: str) -> Dict[str, Any]:
         return await self._post(f"/users/{user_id}/reset-password")
