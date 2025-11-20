@@ -4,9 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cloudpepper"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
-  { name="Lars Labisch", email="lars@labisch.de" },
+  { name="Laurence Lars Labusch", email="lala@labiso.de" },
 ]
 description = "A modern and pythonic Python SDK for the Cloudpepper API."
 readme = "README.md"

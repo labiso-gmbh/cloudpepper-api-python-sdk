@@ -1,0 +1,3004 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Cloudpepper API Docs",
+    "description": "The Cloudpepper API Docs provides comprehensive programmatic access to manage and control Odoo instances in the cloud. This API enables developers to automate deployment, configuration, and maintenance of Odoo environments with enterprise-grade reliability.\n\n**Key capabilities include:**\n- Instance lifecycle management: Create, modify, restart, and delete Odoo instances\n- Backup operations: Schedule automatic backups, restore from backups, and manage retention policies\n- Module management: Install, update and remove custom and official Odoo modules\n- Server administration: Configure cloud servers across multiple providers\n- User access control: Manage permissions and authentication for team members\n- Monitoring: Retrieve logs, statistics, and health information for instances\n\n\nThe API uses standard HTTP response codes, accepts JSON-encoded requests, and returns JSON-encoded responses. Authentication is required for all endpoints using bearer tokens.\n\nThis documentation provides detailed information about available endpoints, request parameters, response formats, and example usage to help you integrate cloudpepper's Odoo management capabilities into your workflows and systems.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/instances/{instanceId}/backup-schedules": {
+      "parameters": [
+        {
+          "name": "instanceId",
+          "in": "path",
+          "description": "Instance ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Backup Schedules"],
+        "summary": "Add a backup schedule",
+        "description": "Creates a new backup schedule for an Odoo instance. Backup schedules automate the process of creating regular backups according to your specified cron schedule and retention policy. This endpoint allows you to configure when backups should occur and how long they should be kept.\n\n**Key Parameters:**\n- `instanceId`: The unique identifier of the instance for which to create the backup schedule\n- `schedule`: Cron expression defining when the backup should run (e.g., '00 08 * * *' for daily at 8:00 AM UTC)\n  - Format: 'minute hour day-of-month month day-of-week'\n  - Special values supported:\n    - '@monthly' or '00 00 1 * *' (first day of month at midnight)\n    - '@weekly' or '00 00 * * 0' (Sunday at midnight)\n    - '@daily', '@midnight' or '00 00 * * *' (daily at midnight)\n    - '@hourly' or '00 * * * *' (hourly at minute 00)\n  - Interval patterns supported:\n    - '00 */12 * * *' (every 12 hours)\n    - '00 */6 * * *' (every 6 hours)\n    - '00 */3 * * *' (every 3 hours)\n- `retention`: Number of days to retain backups before automatic deletion (common values: 7 for one week, 30 for one month, 90 for three months, 365 for one year)\n- `providerId`: Optional ID of a specific backup provider to use (if not specified, the default provider will be used)\n\n**NOTE:** Multiple backup schedules can be created for a single instance with different schedules or retention policies. For example, you might want daily backups with a 7-day retention alongside weekly backups with a 30-day retention.",
+        "operationId": "app_backupschedule_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "schedule": {
+                    "type": "string",
+                    "description": "Cron expression defining when the backup should run. Format: 'minute hour day-of-month month day-of-week'.\n\nSupported special values:\n- @monthly: Run once a month, first day at midnight ('00 00 1 * *')\n- @weekly: Run once a week, Sunday at midnight ('00 00 * * 0')\n- @daily, @midnight: Run once a day at midnight ('00 00 * * *')\n- @hourly: Run once an hour at the start of the hour ('00 * * * *')\n\nSupported interval patterns:\n- '00 */12 * * *': Run every 12 hours\n- '00 */6 * * *': Run every 6 hours\n- '00 */3 * * *': Run every 3 hours\n\nStandard cron examples:\n- '00 08 * * *': Run daily at 8:00 AM (UTC)\n- '00 20 * * *': Run daily at 8:00 PM (UTC)\n- '00 00 1 * *': Run at midnight on the first day of each month\n- '00 00 * * 0': Run at midnight on Sunday",
+                    "example": "00 08 * * *"
+                  },
+                  "retention": {
+                    "type": "integer",
+                    "description": "Number of days to retain the backup. Common values: 7 (one week), 30 (one month), 90 (three months), 365 (one year).",
+                    "example": 7
+                  },
+                  "providerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Optional ID of a specific backup provider to use. If not specified, the default provider will be used.",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                  }
+                },
+                "required": ["schedule", "retention"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Backup schedule created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Unique identifier for the created backup schedule"
+                    }
+                  }
+                },
+                "example": {
+                  "key": "123e4567-e89b-12d3-a456-426614174000"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Instance not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/instances/{instanceId}/backup-schedules/{id}": {
+      "parameters": [
+        {
+          "name": "instanceId",
+          "in": "path",
+          "description": "Instance ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Backup schedule ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "patch": {
+        "tags": ["Backup Schedules"],
+        "summary": "Update a backup schedule",
+        "description": "Modifies an existing backup schedule for an instance. This allows you to change the backup frequency, retention policy, or assigned backup provider without removing and recreating the schedule. Only the fields you specify will be updated; other fields will retain their current values.\n\n**Key Parameters:**\n- `instanceId`: The unique identifier of the instance containing the backup schedule\n- `id`: The unique identifier of the backup schedule to update\n- `schedule`: Optional new cron expression defining when the backup should run\n  - Format: 'minute hour day-of-month month day-of-week' (e.g., '00 08 * * *' for daily at 8:00 AM UTC)\n  - Special values supported:\n    - '@monthly' or '00 00 1 * *' (first day of month at midnight)\n    - '@weekly' or '00 00 * * 0' (Sunday at midnight)\n    - '@daily', '@midnight' or '00 00 * * *' (daily at midnight)\n    - '@hourly' or '00 * * * *' (hourly at minute 00)\n  - Interval patterns supported:\n    - '00 */12 * * *' (every 12 hours)\n    - '00 */6 * * *' (every 6 hours)\n    - '00 */3 * * *' (every 3 hours)\n- `retention`: Optional new retention period in days\n- `providerId`: Optional new backup provider ID\n\n**NOTE:** You can update any combination of the available fields. For example, you can change just the retention period while keeping the same schedule, or update both the schedule and provider while keeping the same retention policy.",
+        "operationId": "app_backupschedule_update",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "schedule": {
+                    "type": "string",
+                    "description": "New cron expression defining when the backup should run. Format: 'minute hour day-of-month month day-of-week'. Also supports special values like @daily, @weekly, @monthly.",
+                    "example": "00 08 * * 5"
+                  },
+                  "retention": {
+                    "type": "integer",
+                    "description": "New retention period in days",
+                    "example": 30
+                  },
+                  "providerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "New backup provider ID (or null to use the default provider)",
+                    "example": "550e8400-e29b-41d4-a716-446655440000",
+                    "nullable": true
+                  }
+                }
+              },
+              "examples": {
+                "Update schedule only": {
+                  "value": {
+                    "schedule": "00 08 * * 5"
+                  }
+                },
+                "Update retention only": {
+                  "value": {
+                    "retention": 30
+                  }
+                },
+                "Update provider only": {
+                  "value": {
+                    "providerId": "550e8400-e29b-41d4-a716-446655440000"
+                  }
+                },
+                "Update all fields": {
+                  "value": {
+                    "schedule": "00 00 1 * *",
+                    "retention": 90,
+                    "providerId": "550e8400-e29b-41d4-a716-446655440000"
+                  }
+                },
+                "Use default provider": {
+                  "value": {
+                    "providerId": null
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Backup schedule updated successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Instance or backup schedule not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["Backup Schedules"],
+        "summary": "Delete a backup schedule",
+        "description": "Permanently removes a backup schedule from an instance. This stops future automatic backups from being created according to this schedule. Optionally, you can also delete all existing backups that were created by this schedule.\n\n**Key Parameters:**\n- `instanceId`: The unique identifier of the instance containing the backup schedule\n- `id`: The unique identifier of the backup schedule to delete\n- `deleteBackups`: Optional query parameter (boolean) to also delete all backups created by this schedule\n\n**NOTE:** If `deleteBackups=true` is specified, all backups associated with this schedule will be permanently deleted. This operation cannot be undone, so use this option with caution.",
+        "operationId": "app_backupschedule_delete",
+        "parameters": [
+          {
+            "name": "deleteBackups",
+            "in": "query",
+            "description": "Also delete all backups created by this schedule",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Backup schedule deleted successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Instance or backup schedule not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/backup-providers": {
+      "post": {
+        "tags": ["Backup Providers"],
+        "summary": "Add a new backup provider",
+        "description": "Creates a new backup provider with the specified configuration. This endpoint supports various storage types including AWS S3, Azure Storage, Google Cloud Storage, S3-compatible storage, SFTP, and internal cloudpepper storage. The provider will be validated before being added to ensure connectivity and proper configuration.\n\n**Key Parameters:**\n- `type`: The storage provider type (e.g., 'aws_s3', 'azure', 'cloudpepper', 'google_cloud', 's3', 'sftp')\n- `secret`: Authentication secret for the provider (e.g., AWS secret key, SFTP password/key)\n- `config`: Provider-specific configuration parameters\n\n**NOTE:** After adding a backup provider, you can use it to store backups of your Odoo instances. You can set a provider as the default for automatic backups via the set-default endpoint.",
+        "operationId": "app_backupprovider_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "description": "The type of backup provider",
+                    "enum": ["aws_s3", "azure", "cloudpepper", "google_cloud", "s3", "sftp"]
+                  },
+                  "credentialId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Optional ID of existing credentials to use"
+                  },
+                  "secret": {
+                    "type": "string",
+                    "description": "Authentication secret for the provider (required if credentialId is not provided)"
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "Provider-specific configuration parameters"
+                  }
+                }
+              },
+              "examples": {
+                "aws_s3": {
+                  "value": {
+                    "type": "aws_s3",
+                    "secret": "YOUR_AWS_SECRET_KEY",
+                    "config": {
+                      "access_key": "YOUR_AWS_ACCESS_KEY",
+                      "bucket": "your-backup-bucket",
+                      "region": "us-west-2"
+                    }
+                  }
+                },
+                "sftp": {
+                  "value": {
+                    "type": "sftp",
+                    "secret": "YOUR_SFTP_PASSWORD_OR_SSH_KEY",
+                    "config": {
+                      "host": "sftp.example.com",
+                      "port": 22,
+                      "user": "backup_user",
+                      "root_path": "/backups"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Backup provider successfully added"
+          },
+          "400": {
+            "description": "Invalid credentials or configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Unable to connect to the storage provider with the provided credentials"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/backup-providers/{id}/set-default": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Backup provider ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Backup Providers"],
+        "summary": "Set a backup provider as default",
+        "description": "Sets the specified backup provider as the default for the tenant. The default provider will be used for automatic backups and other backup-related operations when no specific provider is selected. Only one provider can be set as default at a time.\n\n**Key Parameters:**\n- `id`: The unique identifier of the backup provider to set as default\n\n**NOTE:** Setting a new default provider will automatically unset any previously default provider. This action takes effect immediately for all future backup operations.",
+        "operationId": "app_backupprovider_setdefault",
+        "responses": {
+          "200": {
+            "description": "Default backup provider successfully set"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Backup provider not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/backup-providers/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Backup provider ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "delete": {
+        "tags": ["Backup Providers"],
+        "summary": "Delete a backup provider",
+        "description": "Permanently removes a backup provider from your account. If the provider is currently set as the default, the default provider setting will be cleared. Any existing backups created with this provider will remain accessible until they are explicitly deleted.\n\n**Key Parameters:**\n- `id`: The unique identifier of the backup provider to delete\n\n**NOTE:** This only removes the provider configuration from your account. It does not delete any backup data stored with the provider. If you need to delete the actual backup data, you must manage that separately through the respective provider's interface.",
+        "operationId": "app_backupprovider_delete",
+        "responses": {
+          "200": {
+            "description": "Backup provider successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "ok"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Backup provider not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+
+    "/servers/{id}/version": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Server id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Server Info"],
+        "summary": "Get Odoo version information",
+        "description": "Retrieves information about the currently installed Odoo version on the server and the latest available version. This endpoint helps you determine if your server is running the most current version of Odoo within your major version. You can use this information to decide whether to update your server.\n\n**Key Parameters:**\n- `id`: The unique identifier of the server\n\n**Returns:**\n- Current installed Odoo version\n- Latest available Odoo version for your major release\n\n**NOTE:** Version information is based on the official Odoo package repository. The 'latest' version refers to the most recent stable release within your major version (e.g., the latest 16.0 release if you're running Odoo 16).",
+        "responses": {
+          "200": {
+            "description": "Version information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "current": {
+                      "type": "string",
+                      "description": "Currently installed Odoo version",
+                      "example": "16.0.20230215"
+                    },
+                    "latest": {
+                      "type": "string",
+                      "description": "Latest available Odoo version",
+                      "example": "16.0.20230301"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        }
+      }
+    },
+
+    "/servers/{id}/stats": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Server id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Server Info"],
+        "summary": "Get server statistics",
+        "description": "Retrieves detailed statistics about the server's performance and resource usage. This endpoint provides comprehensive data about system resources including CPU, memory, disk usage, and database connections. The data comes from the server's Prometheus monitoring system and can be used for performance analysis, capacity planning, and troubleshooting.\n\n**Key Information Provided:**\n- CPU usage and model information\n- Memory usage metrics\n- Disk space utilization\n- Database connections and performance metrics\n\n**NOTE:** This endpoint requires the server to have the Prometheus capability enabled. If the capability is not enabled, the endpoint will return a 403 error.",
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cpu": {
+                      "type": "object",
+                      "description": "CPU usage information"
+                    },
+                    "disk": {
+                      "type": "object",
+                      "description": "Disk usage information"
+                    },
+                    "mem": {
+                      "type": "object",
+                      "description": "Memory usage information"
+                    },
+                    "db_backends": {
+                      "type": "object",
+                      "description": "Number of active database connections"
+                    },
+                    "db_maxconns": {
+                      "type": "object",
+                      "description": "Maximum allowed database connections"
+                    }
+                  }
+                },
+                "example": {
+                  "cpu": {
+                    "result": {
+                      "value": [1675881600, "15.23"]
+                    }
+                  },
+                  "disk": {
+                    "node_filesystem_free_bytes": {
+                      "metric": {"mountpoint": "/", "__name__": "node_filesystem_free_bytes"},
+                      "value": [1675881600, "42949672960"]
+                    },
+                    "node_filesystem_size_bytes": {
+                      "metric": {"mountpoint": "/", "__name__": "node_filesystem_size_bytes"},
+                      "value": [1675881600, "107374182400"]
+                    }
+                  },
+                  "mem": {
+                    "node_memory_MemTotal_bytes": {
+                      "value": [1675881600, "8589934592"]
+                    },
+                    "node_memory_MemFree_bytes": {
+                      "value": [1675881600, "4294967296"]
+                    }
+                  },
+                  "db_backends": {
+                    "result": {
+                      "value": [1675881600, "12"]
+                    }
+                  },
+                  "db_maxconns": {
+                    "result": {
+                      "value": [1675881600, "100"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        }
+      }
+    },
+    "/servers/{id}/prometheus": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Server id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "query",
+          "in": "query",
+          "description": "Prometheus query string",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "start",
+          "in": "query",
+          "description": "Start timestamp for range query",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        {
+          "name": "end",
+          "in": "query",
+          "description": "End timestamp for range query",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        {
+          "name": "step",
+          "in": "query",
+          "description": "Step interval for range query (e.g., '15s', '1m', '1h')",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Server Info"],
+        "summary": "Query server metrics over time range",
+        "description": "Executes a Prometheus range query to retrieve server metrics over a specified time period. This endpoint allows you to analyze performance trends, generate custom charts, and investigate performance issues by querying specific metrics with custom time ranges. The endpoint acts as a proxy to the server's Prometheus instance, enabling powerful time-series data analysis.\n\n For detailed information about query syntax, functions, and operators, refer to the [Prometheus Query API documentation](https://prometheus.io/docs/prometheus/latest/querying/api/).\n\n**Key Parameters:**\n- `id`: The unique identifier of the server\n- `query`: Prometheus query string (e.g., 'node_memory_MemFree_bytes', 'rate(node_network_receive_bytes_total[5m])')\n- `start`: Unix timestamp for the start of the query range\n- `end`: Unix timestamp for the end of the query range\n- `step`: Resolution step for the data points (e.g., '15s', '1m', '1h')\n\n**NOTE:** This endpoint requires the server to have the Prometheus capability enabled. Complex queries may take longer to execute, and very large time ranges with small steps may be limited for performance reasons.",
+        "responses": {
+          "200": {
+            "description": "Query executed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "resultType": {
+                          "type": "string",
+                          "example": "matrix"
+                        },
+                        "result": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "data": {
+                    "resultType": "matrix",
+                    "result": [
+                      {
+                        "metric": {
+                          "__name__": "node_cpu_seconds_total",
+                          "cpu": "0",
+                          "mode": "idle"
+                        },
+                        "values": [
+                          [1675881600, "3624546.8"],
+                          [1675881900, "3624576.81"],
+                          [1675882200, "3624606.71"]
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters"
+          },
+          "403": {
+            "description": "Access denied or Prometheus capability not enabled"
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        }
+      }
+    },
+    "/servers": {
+      "get": {
+        "tags": ["Server Info"],
+        "summary": "List all servers",
+        "description": "Retrieves a list of all servers in your account. This endpoint provides an overview of your server infrastructure, including server IDs, names, and status. This is useful for getting a comprehensive view of your server environment or selecting servers for other operations.",
+        "responses": {
+          "200": {
+            "description": "Servers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique identifier for the server"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Name of the server"
+                      },
+                      "status": {
+                        "type": "string",
+                        "description": "Current status of the server"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": "0196e-7f35-78da-919e-3ebb0afde",
+                    "name": "DigitalOcean 28963963",
+                    "status": "available"
+                  },
+                  {
+                    "id": "0199a-287e-74d6-8c42-f8d6f184",
+                    "name": "AWS 494450064",
+                    "status": "available"
+                  }
+                ]
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (requires admin privileges)"
+          }
+        }
+      },
+
+      "post": {
+        "tags": ["Server Info"],
+        "summary": "Create a new server",
+        "description": "Creates a new server for hosting Odoo instances. This endpoint provisions a cloud server or sets up a custom SSH server with the necessary infrastructure to run Odoo applications. The server will be prepared with all required system dependencies, security configurations, and monitoring tools.\n\n**Key Parameters:**\n- `type`: The cloud provider to use (e.g., 'cloudpepper', 'digitalocean', 'vultr', 'aws', 'linode', 'custom')\n- `region`: Datacenter location identifier (varies by provider, not required for custom servers)\n- `plan`/`size`/`instanceType`: Server resources specification (name varies by provider, not required for custom servers)\n- `config.odoo_version`: Version of Odoo to install (e.g., '16.0', '17.0')\n- `ssh`: SSH configuration object (required only for custom servers)\n\n**Custom SSH Server Requirements:**\n- Must be a clean Linux installation (amd64 architecture)\n- Supported operating systems:\n  - Debian 13 Trixie (for Odoo 18.0, 19.0)\n  - Debian 12 Bookworm (for Odoo 16.0, 17.0, 18.0)\n  - Debian 11 Bullseye (for Odoo 13.0, 14.0, 15.0)\n  - Debian 10 Buster (for Odoo 11.0, 12.0)\n  - Ubuntu 24.04 LTS (for Odoo 18.0)\n  - Ubuntu 22.04 LTS (for Odoo 14.0, 15.0, 16.0, 17.0)\n  - Ubuntu 20.04 LTS (for Odoo 12.0, 13.0)\n- User must have sudo privileges\n- SSH access must be available\n- User cannot be 'odoo' (reserved for Odoo installation)\n\n**NOTE:** Server provisioning runs asynchronously. After receiving a 200 response, the server will continue setting up in the background. The process typically takes 5-10 minutes to complete for cloud providers, or 10-15 minutes for custom SSH servers. You can check the server status using the server management endpoints.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "oneOf": [
+                  {
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "description": "The cloud provider type",
+                        "enum": ["cloudpepper"]
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "Datacenter location identifier"
+                      },
+                      "plan": {
+                        "type": "string",
+                        "description": "Server plan identifier specifying CPU, RAM, and disk resources"
+                      },
+                      "config": {
+                        "type": "object",
+                        "properties": {
+                          "odoo_version": {
+                            "type": "string",
+                            "description": "Version of Odoo to install on the server"
+                          }
+                        },
+                        "required": ["odoo_version"]
+                      }
+                    },
+                    "required": ["type", "region", "plan", "config"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "description": "The cloud provider type",
+                        "enum": ["digitalocean"]
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "Datacenter location identifier"
+                      },
+                      "size": {
+                        "type": "string",
+                        "description": "Droplet size identifier specifying CPU, RAM, and disk resources"
+                      },
+                      "config": {
+                        "type": "object",
+                        "properties": {
+                          "odoo_version": {
+                            "type": "string",
+                            "description": "Version of Odoo to install on the server"
+                          }
+                        },
+                        "required": ["odoo_version"]
+                      }
+                    },
+                    "required": ["type", "region", "size", "config"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "description": "The cloud provider type",
+                        "enum": ["vultr"]
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "Datacenter location identifier"
+                      },
+                      "plan": {
+                        "type": "string",
+                        "description": "Server plan identifier specifying CPU, RAM, and disk resources"
+                      },
+                      "config": {
+                        "type": "object",
+                        "properties": {
+                          "odoo_version": {
+                            "type": "string",
+                            "description": "Version of Odoo to install on the server"
+                          }
+                        },
+                        "required": ["odoo_version"]
+                      }
+                    },
+                    "required": ["type", "region", "plan", "config"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "description": "The cloud provider type",
+                        "enum": ["linode"]
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "Datacenter location identifier"
+                      },
+                      "instanceType": {
+                        "type": "string",
+                        "description": "Linode instance type identifier specifying CPU, RAM, and disk resources"
+                      },
+                      "config": {
+                        "type": "object",
+                        "properties": {
+                          "odoo_version": {
+                            "type": "string",
+                            "description": "Version of Odoo to install on the server"
+                          }
+                        },
+                        "required": ["odoo_version"]
+                      }
+                    },
+                    "required": ["type", "region", "instanceType", "config"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "description": "The cloud provider type",
+                        "enum": ["aws"]
+                      },
+                      "region": {
+                        "type": "string",
+                        "description": "AWS region identifier"
+                      },
+                      "instanceType": {
+                        "type": "string",
+                        "description": "AWS EC2 instance type identifier"
+                      },
+                      "volumeSize": {
+                        "type": "integer",
+                        "description": "Storage size in GB",
+                        "default": 30
+                      },
+                      "enableSwap": {
+                        "type": "boolean",
+                        "description": "Whether to enable swap space",
+                        "default": true
+                      },
+                      "createElasticIp": {
+                        "type": "boolean",
+                        "description": "Whether to create and assign an Elastic IP",
+                        "default": true
+                      },
+                      "vpcId": {
+                        "type": "string",
+                        "description": "Optional VPC ID to launch the instance in",
+                        "nullable": true
+                      },
+                      "config": {
+                        "type": "object",
+                        "properties": {
+                          "odoo_version": {
+                            "type": "string",
+                            "description": "Version of Odoo to install on the server"
+                          }
+                        },
+                        "required": ["odoo_version"]
+                      }
+                    },
+                    "required": ["type", "region", "instanceType", "config"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "description": "Server type for custom SSH servers",
+                        "enum": ["custom"]
+                      },
+                      "ssh": {
+                        "type": "object",
+                        "description": "SSH connection configuration for the custom server",
+                        "properties": {
+                          "host": {
+                            "type": "string",
+                            "description": "IP address or hostname of the SSH server",
+                            "example": "192.168.1.100"
+                          },
+                          "port": {
+                            "type": "integer",
+                            "description": "SSH port number",
+                            "default": 22,
+                            "example": 22
+                          },
+                          "user": {
+                            "type": "string",
+                            "description": "SSH username (cannot be 'odoo' as it's reserved)",
+                            "example": "root"
+                          },
+                          "auth_type": {
+                            "type": "string",
+                            "description": "Authentication method for SSH connection",
+                            "enum": ["password", "key"],
+                            "example": "password"
+                          },
+                          "password": {
+                            "type": "string",
+                            "description": "SSH password (required when auth_type is 'password')",
+                            "example": "your_secure_password"
+                          },
+                          "private_key": {
+                            "type": "string",
+                            "description": "SSH private key content (required when auth_type is 'key')",
+                            "example": "-----BEGIN OPENSSH PRIVATE KEY-----\n[private key content]\n-----END OPENSSH PRIVATE KEY-----"
+                          }
+                        },
+                        "required": ["host", "user", "auth_type"],
+                        "allOf": [
+                          {
+                            "if": {
+                              "properties": {
+                                "auth_type": {
+                                  "const": "password"
+                                }
+                              }
+                            },
+                            "then": {
+                              "required": ["password"]
+                            }
+                          },
+                          {
+                            "if": {
+                              "properties": {
+                                "auth_type": {
+                                  "const": "key"
+                                }
+                              }
+                            },
+                            "then": {
+                              "required": ["private_key"]
+                            }
+                          }
+                        ]
+                      },
+                      "config": {
+                        "type": "object",
+                        "properties": {
+                          "odoo_version": {
+                            "type": "string",
+                            "description": "Version of Odoo to install on the server. Must be compatible with the server's operating system.",
+                            "enum": ["11.0", "12.0", "13.0", "14.0", "15.0", "16.0", "17.0", "18.0", "19.0"],
+                            "example": "17.0"
+                          }
+                        },
+                        "required": ["odoo_version"]
+                      }
+                    },
+                    "required": ["type", "ssh", "config"]
+                  }
+                ]
+              },
+              "examples": {
+                "cloudpepper": {
+                  "summary": "Cloudpepper server creation",
+                  "value": {
+                    "type": "cloudpepper",
+                    "region": "fra",
+                    "plan": "vhp-2c-4gb-amd",
+                    "config": {
+                      "odoo_version": "17.0"
+                    }
+                  }
+                },
+                "digitalocean": {
+                  "summary": "DigitalOcean server creation",
+                  "value": {
+                    "type": "digitalocean",
+                    "region": "ams3",
+                    "size": "s-2vcpu-4gb",
+                    "config": {
+                      "odoo_version": "17.0"
+                    }
+                  }
+                },
+                "vultr": {
+                  "summary": "Vultr server creation",
+                  "value": {
+                    "type": "vultr",
+                    "region": "fra",
+                    "plan": "vc2-2c-4gb",
+                    "config": {
+                      "odoo_version": "17.0"
+                    }
+                  }
+                },
+                "linode": {
+                  "summary": "Linode server creation",
+                  "value": {
+                    "type": "linode",
+                    "region": "ap-west",
+                    "instanceType": "g6-standard-1",
+                    "config": {
+                      "odoo_version": "17.0"
+                    }
+                  }
+                },
+                "aws": {
+                  "summary": "AWS server creation",
+                  "value": {
+                    "type": "aws",
+                    "region": "us-west-2",
+                    "instanceType": "t3.micro",
+                    "volumeSize": 30,
+                    "enableSwap": true,
+                    "vpcId": "vpc-0a1b2c3d4e5f6g7h8",
+                    "config": {
+                      "odoo_version": "17.0"
+                    }
+                  }
+                },
+                "custom_password": {
+                  "summary": "Custom SSH server with password authentication",
+                  "value": {
+                    "type": "custom",
+                    "ssh": {
+                      "host": "192.168.1.100",
+                      "port": 22,
+                      "user": "root",
+                      "auth_type": "password",
+                      "password": "your_secure_password"
+                    },
+                    "config": {
+                      "odoo_version": "17.0"
+                    }
+                  }
+                },
+                "custom_key": {
+                  "summary": "Custom SSH server with SSH key authentication",
+                  "value": {
+                    "type": "custom",
+                    "ssh": {
+                      "host": "192.168.1.100",
+                      "port": 22,
+                      "user": "ubuntu",
+                      "auth_type": "key",
+                      "private_key": "-----BEGIN OPENSSH PRIVATE KEY-----\n[Your private key content here]\n-----END OPENSSH PRIVATE KEY-----"
+                    },
+                    "config": {
+                      "odoo_version": "17.0"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "name": "venv",
+            "in": "query",
+            "description": "Whether to use a virtual environment for Odoo",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"],
+              "default": "false"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server creation initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Unique identifier for the newly created server"
+                    }
+                  }
+                },
+                "example": {
+                  "Server id": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data or payment processing issue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message describing the issue"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "Unable to process your payment, please contact Cloudpepper support."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to create servers"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/servers/{id}/update": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Server id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Server Info"],
+        "summary": "Update Odoo on server",
+        "description": "Initiates an update of the Odoo installation on the server. This endpoint triggers the update process for the core Odoo system, applying any available security patches, bug fixes, or feature updates from the official Odoo repository. This helps ensure your server is running the latest stable version of Odoo within your chosen major version.\n\n**Key Parameters:**\n- `id`: The unique identifier of the server to update\n\n**NOTE:** The update process runs asynchronously and may take several minutes to complete. During this time, your Odoo instances on the server will remain accessible, but some administrative operations might be temporarily unavailable. It's recommended to schedule updates during low-traffic periods.",
+        "responses": {
+          "200": {
+            "description": "Update process initiated successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        }
+      }
+    },
+    "/instance-templates": {
+      "post": {
+        "tags": ["Instance Templates"],
+        "summary": "Create a new instance template",
+        "description": "Creates a new instance template for you. Instance templates allow you to save predefined configurations for Odoo instances, making it easier to deploy new instances with consistent settings. Currently, instance templates primarily support backup schedule configurations.\n\n**Key Parameters:**\n- `name`: Name for your template (used for identification in the UI)\n- `schedules`: It contains containing backup schedule configurations. Each configuration contains:\n  - A cron expression defining when the backup should run (e.g., '00 08 * * *' for daily at 8:00 AM UTC)\n  - Format: 'minute hour day-of-month month day-of-week'\n  - Special values supported:\n    - '@monthly' or '00 00 1 * *' (first day of month at midnight)\n    - '@weekly' or '00 00 * * 0' (Sunday at midnight)\n    - '@daily', '@midnight' or '00 00 * * *' (daily at midnight)\n    - '@hourly' or '00 * * * *' (hourly at minute 00)\n  - Interval patterns supported:\n    - '00 */12 * * *' (every 12 hours)\n    - '00 */6 * * *' (every 6 hours)\n    - '00 */3 * * *' (every 3 hours)\n  - `retention`: Integer number of days to retain backups (e.g., 7 for one week, 30 for one month)\n\nNOTE: All pre-fill values are examples and should be replaced with actual data. Example shows how to setup multiple backups with same frequency, please adjust the configuration as per your needs.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the instance template",
+                    "example": "Basic Template with Daily Backups"
+                  },
+                  "schedules": {
+                    "type": "object",
+                    "description": "Backup schedule configurations",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "schedule": {
+                        "type": "string",
+                        "description": "Cron expression defining when the backup should run. Format: 'minute hour day-of-month month day-of-week'.\n\nSupported special values:\n- @monthly: Run once a month, first day at midnight ('00 00 1 * *')\n- @weekly: Run once a week, Sunday at midnight ('00 00 * * 0')\n- @daily, @midnight: Run once a day at midnight ('00 00 * * *')\n- @hourly: Run once an hour at the start of the hour ('00 * * * *')\n\nSupported interval patterns:\n- '00 */12 * * *': Run every 12 hours\n- '00 */6 * * *': Run every 6 hours\n- '00 */3 * * *': Run every 3 hours\n\nStandard cron examples:\n- '00 08 * * *': Run daily at 8:00 AM (UTC)\n- '00 20 * * *': Run daily at 8:00 PM (UTC)\n- '00 00 1 * *': Run at midnight on the first day of each month\n- '00 00 * * 0': Run at midnight on Sunday",
+                        "example": "00 08 * * *"
+                        },
+                        "retention": {
+                          "type": "integer",
+                          "description": "Number of days to retain the backup. Common values: 7 (one week), 30 (one month), 90 (three months), 365 (one year).",
+                          "example": 7
+                        }
+                      },
+                      "required": ["schedule", "retention"]
+                    },
+                    "example": {
+                      "daily_backup": {
+                        "schedule": "00 00 * * *",
+                        "retention": 7
+                      },
+                      "daily_backup_2": {
+                        "schedule": "00 05 * * *",
+                        "retention": 7
+                      },
+                      "weekly_backup": {
+                        "schedule": "00 00 * * 0",
+                        "retention": 30
+                      },
+                      "weekly_backup_2": {
+                        "schedule": "00 00 * * 5",
+                        "retention": 15
+                      },
+                      "monthly_backup": {
+                        "schedule": "00 00 1 * *",
+                        "retention": 90
+                      },
+                      "monthly_backup_2": {
+                        "schedule": "00 00 15 * *",
+                        "retention": 90
+                      }
+                    }
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Instance template created successfully"
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          }
+        }
+      }
+    },
+    "/instance-templates/{id}/default": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance template ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "tags": ["Instance Templates"],
+        "summary": "Set template as default",
+        "description": "Sets or unsets the specified instance template as the default template for the tenant. The default template will be automatically selected when creating new instances.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance template\n- `default`: Boolean flag to set (true) or unset (false) this template as the default\n\nNOTE: Only one template can be the default at a time. Setting a new default will automatically unset any previously default template.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "default": {
+                    "type": "boolean",
+                    "description": "Whether to set this template as the default",
+                    "example": true
+                  }
+                },
+                "required": ["default"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Default status updated successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Instance template not found"
+          }
+        }
+      }
+    },
+    "/instance-templates/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance template ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "tags": ["Instance Templates"],
+        "summary": "Delete an instance template",
+        "description": "Permanently deletes the specified instance template. If this template was set as the default template for the tenant, that setting will also be removed. This action cannot be undone.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance template to delete\n\nNOTE: Deleting a template does not affect instances that were previously created using it.",
+        "responses": {
+          "200": {
+            "description": "Instance template deleted successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Instance template not found"
+          }
+        }
+      }
+    },
+
+    "/backups": {
+      "get": {
+        "tags": ["Backups"],
+        "summary": "List all backups",
+        "description": "Retrieves a list of all backups for your account. This endpoint returns comprehensive information about each backup, including when it was created, its size, status, and the instance it belongs to. This data can be used for monitoring your backup history, verifying backup completion, and managing your backup storage.\n\n**The response includes:**\n- Unique backup identifier\n- Backup status (complete, pending, error, etc.)\n- Completion timestamp\n- Backup size in bytes\n- Instance ID (if the backup is associated with an instance, may be null)",
+        "operationId": "app_api_getbackups",
+        "responses": {
+          "200": {
+            "description": "Backups retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Backup"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "0194dbaf-9b09-7d54-9621-00a59f58046d",
+                    "status": "complete",
+                    "completedAt": "2025-02-06T14:35:30+00:00",
+                    "size": 1115479,
+                    "instanceId": null,
+                    "notes": "Pre-migration backup"
+                  },
+                  {
+                    "id": "01958aa4-21ad-7deb-a3b7-1c5eb5bcaab2",
+                    "status": "complete",
+                    "completedAt": "2025-03-12T13:56:29+00:00",
+                    "size": 3346652,
+                    "instanceId": null,
+                    "notes": "Pre-migration backup"
+                  },
+                  {
+                    "id": "0195cc49-6cb3-718e-86af-b7213b5ff6ca",
+                    "status": "complete",
+                    "completedAt": "2025-03-25T07:52:24+00:00",
+                    "size": 2231239,
+                    "instanceId": null,
+                    "notes": "Pre-migration backup"
+                  },
+                  {
+                    "id": "0195eb6e-9680-70e8-b90c-2df394a153ad",
+                    "status": "complete",
+                    "completedAt": "2025-03-31T09:01:16+00:00",
+                    "size": 2558044,
+                    "instanceId": null,
+                    "notes": "Pre-migration backup"
+                  },
+                  {
+                    "id": "0195ebc7-4330-74ef-931e-3b26cb17a0fb",
+                    "status": "complete",
+                    "completedAt": "2025-03-31T10:37:57+00:00",
+                    "size": 2486360,
+                    "instanceId": null,
+                    "notes": "Pre-migration backup"
+                  },
+                  {
+                    "id": "0195ebf1-9dfa-7b0d-a663-06c868c1d5c1",
+                    "status": "complete",
+                    "completedAt": "2025-03-31T11:24:12+00:00",
+                    "size": 2558040,
+                    "instanceId": null,
+                    "notes": "Pre-migration backup"
+                  },
+                  {
+                    "id": "0195efb6-decf-7d01-a10e-68a301bb0c92",
+                    "status": "complete",
+                    "completedAt": "2025-04-01T04:58:35+00:00",
+                    "size": 1115314,
+                    "instanceId": null,
+                    "notes": "Pre-migration backup"
+                  }
+                ]
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (requires admin privileges)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+
+    "/backup-usage": {
+      "parameters": [
+        {
+          "name": "from",
+          "in": "query",
+          "description": "Start date for the usage data range (format: YYYY-MM-DD)",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        {
+          "name": "to",
+          "in": "query",
+          "description": "End date for the usage data range (format: YYYY-MM-DD)",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Backups"],
+        "summary": "Get backup storage usage",
+        "description": "Retrieves historical backup storage usage data for your account within a specified date range. This endpoint provides detailed insights into how your backup storage consumption has changed over time, which is useful for monitoring, planning, and cost management. The data returned includes daily storage usage values measured in bytes.\n\n**Key Parameters:**\n- `from`: Start date for the usage data range (format: YYYY-MM-DD)\n- `to`: End date for the usage data range (format: YYYY-MM-DD)\n\n**NOTE:** This endpoint requires administrator privileges. The date range should typically be within reasonable limits (e.g., 1-3 months) for optimal performance. Very large date ranges may impact response time.",
+        "responses": {
+          "200": {
+            "description": "Backup usage data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Quota"
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2023-01-01",
+                    "value": 1073741824
+                  },
+                  {
+                    "date": "2023-01-02",
+                    "value": 1288490188
+                  },
+                  {
+                    "date": "2023-01-03",
+                    "value": 1288490188
+                  }
+                ]
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions - requires administrator privileges"
+          }
+        }
+      }
+    },
+
+    "/backups/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Backup id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "patch": {
+        "tags": ["Backups"],
+        "summary": "Update backup properties",
+        "description": "Updates specific properties of a backup such as notes. This endpoint allows you to add or modify notes for your backups to help organize and document your backup history. Notes are useful for tracking the purpose of a backup, what changes were included, or any other relevant information.\n\n**Key Parameters:**\n- `id`: The unique identifier of the backup to update\n- `notes`: Optional text field to add or update notes for the backup\n\n**NOTE:** Changes are applied immediately to the backup record.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notes": {
+                    "type": "string",
+                    "description": "Notes to add or update for the backup",
+                    "example": "Pre-migration backup with custom modules installed"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Backup updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "ok"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions - requires edit permissions"
+          },
+          "404": {
+            "description": "Backup not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["Backups"],
+        "summary": "Delete backup",
+        "description": "Permanently deletes a specific backup from your account. This endpoint initiates the deletion process by setting the backup status to DELETING and starts the underlying process of backup deletion. This is useful for removing old or unnecessary backups to free up storage space and maintain your backup archive.\n\n**Key Parameters:**\n- `id`: The unique identifier of the backup to delete\n\n**NOTE:** This is a permanent operation and cannot be undone. Once deleted, the backup data will be completely removed from storage, and recovery will not be possible. Make sure you no longer need the backup before proceeding with deletion.",
+        "responses": {
+          "200": {
+            "description": "Backup deletion process initiated successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions - requires edit permissions"
+          },
+          "500": {
+            "description": "Backup not found"
+          }
+        }
+      }
+    },
+    "/servers/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Server id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "patch": {
+        "tags": ["Server Info"],
+        "summary": "Update server settings",
+        "description": "Updates server settings such as the server name, features, and configuration options. This endpoint allows you to modify server properties after it has been created. Changes are applied immediately to the server configuration.\n\n**Key Parameters:**\n- `id`: The unique identifier of the server to update\n- `name`: Optional new name for the server\n- `features.autoUpdate.enabled`: Optional boolean to enable/disable automatic updates to server\n- `features.geoIP.enabled`: Optional boolean to enable/disable GeoIP functionality\n\n**NOTE:** Only the fields you specify in the request body will be updated. Other server properties will remain unchanged.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "New name for the server",
+                    "example": "Production Server - Updated"
+                  },
+                  "features": {
+                    "type": "object",
+                    "description": "Server features configuration",
+                    "properties": {
+                      "autoUpdate": {
+                        "type": "object",
+                        "properties": {
+                          "enabled": {
+                            "type": "boolean",
+                            "description": "Enable or disable automatic updates for the server",
+                            "example": true
+                          }
+                        }
+                      },
+                      "geoIP": {
+                        "type": "object",
+                        "properties": {
+                          "enabled": {
+                            "type": "boolean",
+                            "description": "Enable or disable GeoIP functionality on the server",
+                            "example": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "Update server name": {
+                  "value": {
+                    "name": "My Production Server"
+                  }
+                },
+                "Enable auto-update": {
+                  "value": {
+                    "features": {
+                      "autoUpdate": {
+                        "enabled": true
+                      }
+                    }
+                  }
+                },
+                "Enable GeoIP": {
+                  "value": {
+                    "features": {
+                      "geoIP": {
+                        "enabled": true
+                      }
+                    }
+                  }
+                },
+                "Update multiple settings": {
+                  "value": {
+                    "name": "Updated Production Server",
+                    "features": {
+                      "autoUpdate": {
+                        "enabled": true
+                      },
+                      "geoIP": {
+                        "enabled": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Server updated successfully"
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+            {
+            "name": "force",
+            "in": "query",
+            "description": "Force deletion even if server is not reachable",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "tags": ["Server Info"],
+        "summary": "Delete server",
+        "description": "Permanently deletes a server from your account. When deleting a server normally, the system will initiate a clean deletion process that removes all associated resources. If the `force` parameter is used, the system will directly remove the server from the database without attempting to clean up resources, which is useful when a server is no longer reachable but still appears in your account.\n\n**Key Parameters:**\n- `id`: The unique identifier of the server to delete\n- `force`: Optional boolean flag to force deletion even if the server is not reachable\n\n**NOTE:** This is a permanent operation and cannot be undone. All instances on the server will be deleted as well. Use the force parameter with caution, as it bypasses normal cleanup procedures and may leave orphaned resources.",
+        "responses": {
+          "204": {
+            "description": "Server deleted successfully"
+          },
+          "400": {
+            "description": "Invalid request - force parameter used but last heartbeat not available"
+          },
+          "404": {
+            "description": "Server not found"
+          }
+        }
+      }
+    },
+
+    "/instances/{id}/status": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "variables",
+          "in": "query",
+          "description": "Variables",
+          "required": false,
+          "schema": {
+            "type": "array"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Odoo Instances"],
+        "summary": "Get instance status",
+        "description": "Retrieves detailed status information about the specified Odoo instance. This endpoint provides comprehensive data about the instance's current state, including system resource usage, database statistics, process information, and operational status. This is useful for monitoring instance health and troubleshooting performance issues.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance whose status you want to check\n- `variables`: Optional query parameters to request specific status information\n\n**NOTE:** The response format will vary depending on the instance state and requested variables. You can use this endpoint to check if an instance is fully operational after creation, restart, or update operations.",
+        "responses": {
+          "200": {
+            "description": "Instance status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "systemctl_status": "active",
+                  "git_branch": "17.0",
+                  "git_revision": "commit id"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Instance not found"
+          }
+        }
+      }
+    },
+    "/instances/{id}/config": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Odoo Instances"],
+        "summary": "Get Odoo config",
+        "description": "Retrieves the Odoo configuration file content for the specified instance. This endpoint returns the actual content of the Odoo configuration file (typically odoo.conf) which contains important settings like database connections, logging levels, and performance parameters. This is useful for reviewing the current configuration before making changes.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance whose configuration you want to retrieve\n.",
+        "responses": {
+          "200": {
+            "description": "Configuration file retrieved successfully",
+            "content": {
+              "text/plain": null
+            }
+          }
+        }
+      }
+    },
+
+    "/instances": {
+      "get": {
+        "tags": ["Odoo Instances"],
+        "summary": "List all instances",
+        "description": "Retrieves a list of all Odoo instances in your account. This endpoint returns basic information about each instance, including identifiers, domain names, and current status. This data can be used for monitoring your Odoo deployments or integrating with other systems.\n\n**Returns Information About:**\n- Instance IDs and names\n- Domain configuration including primary domain and aliases\n- Current operational status\n- Relationships between instances (parent/staging)\n- Server assignment via serverId",
+        "responses": {
+          "200": {
+            "description": "Instances retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Unique identifier for the instance"
+                      },
+                      "parentId": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uuid",
+                        "description": "Parent instance ID (for staging instances)"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Instance name (typically used as database name)"
+                      },
+                      "domain": {
+                        "type": "string",
+                        "description": "Primary domain name for the instance"
+                      },
+                      "aliasDomains": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Additional domain aliases for this instance"
+                      },
+                      "status": {
+                        "type": "string",
+                        "description": "Current instance status (e.g., started, stopped, creating, deleting)"
+                      },
+                      "serverId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID of the server hosting this instance"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": "0196ab35-ba55-77b6-96ea-2122d9e0e8b1",
+                    "parentId": null,
+                    "name": "test",
+                    "domain": "test.209.38.216.102.nip.io",
+                    "aliasDomains": [],
+                    "status": "deleting",
+                    "serverId": "0196aa6e-7f35-78da-919e-3ebbc3b0afde"
+                  },
+                  {
+                    "id": "0196aece-dbc3-7208-ae94-69cadd8ae63c",
+                    "parentId": null,
+                    "name": "24mzr4uptn7.143.244.143.150.nip.io",
+                    "domain": "24mzr4uptn7.143.244.143.150.nip.io",
+                    "aliasDomains": [],
+                    "status": "started",
+                    "serverId": "0196ae9a-287e-74d6-8c42-f8d34376f184"
+                  }
+                ]
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (requires admin privileges)"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": ["Odoo Instances"],
+        "summary": "Create a new Odoo instance",
+        "description": "Creates a new Odoo instance on your server. This simple process lets you set up a complete Odoo environment with just a few clicks. You can choose to create a fresh installation or restore from an existing backup. The system will handle all the technical details of provisioning, configuring, and launching your new Odoo instance.\n\n**Key Parameters:**\n- `serverId`: The ID of the server where you want to create the instance (must be a valid UUID)\n- `backupId`: Optional ID of a backup to restore from\n- `parentId`: Optional ID of an existing instance to use as a template (great for creating staging environments)\n- `config.name`: Name for your Odoo instance (will be used as database name)\n- `config.domain`: Domain name where your instance will be accessible\n- `config.odoo_version`: Version of Odoo to install (e.g., '16.0', '17.0') - not needed if restoring from backup\n- `options.admin_password`: Custom admin password (if not provided, a secure password will be generated)\n \n NOTE: All pre-fill values are examples and should be replaced with actual data. Please remove the optional fields completely if you don't need them.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "serverId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "ID of the server where you want to create the instance (must be a valid UUID)",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                  },
+                  "backupId": {
+                    "type": "string",
+                    "description": "Optional: ID of a backup to restore from",
+                    "example": "7a1b3cd4-e5f6-7g8h-9i0j-1k2l3m4n5o6p"
+                  },
+                  "parentId": {
+                    "type": "string",
+                    "description": "Optional: ID of a parent instance (useful for creating staging environments)",
+                    "example": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "Configuration settings for the new instance",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Name for your Odoo instance (will be used as database name)",
+                        "example": "mycompany"
+                      },
+                      "domain": {
+                        "type": "string",
+                        "description": "Domain name where your instance will be accessible",
+                        "example": "mycompany.odoopanel.io"
+                      },
+                      "odoo_version": {
+                        "type": "string",
+                        "description": "Version of Odoo to install (e.g., '16.0', '17.0'). Not required if restoring from backup.",
+                        "example": "17.0"
+                      }
+                    },
+                    "required": ["name", "domain"]
+                  },
+                  "options": {
+                    "type": "object",
+                    "description": "Additional options for instance creation",
+                    "properties": {
+                      "admin_password": {
+                        "type": "string",
+                        "description": "Custom admin password for the instance. If not provided, a secure password will be generated automatically.",
+                        "example": "MySecureP@ssw0rd!"
+                      }
+                    }
+                  }
+                },
+                "required": ["cloudId", "config"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Instance creation started successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "019808ae-ecdb-73bf-8bf9-0db4cb5c31da"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "generatedPassword": {
+                      "type": "string",
+                      "example": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          }
+        }
+      }
+    },
+    "/instances/{id}/restart": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Odoo Instances"],
+        "summary": "Restart Odoo instance",
+        "description": "Restarts the specified Odoo instance. This is useful when you need to apply configuration changes, clear the instance cache, or resolve performance issues. Users can trigger a restart when experiencing slowness, after updating modules, or when configuration changes have been made that require a service restart to take effect.",
+        "responses": {
+          "200": {
+            "description": "Instance restart initiated successfully"
+          }
+        }
+      }
+    },
+    "/instances/{id}/stop": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Odoo Instances"],
+        "summary": "Stop Odoo instance",
+        "description": "Stops the specified Odoo instance. This is useful when you need to temporarily shut down an instance to save resources or perform maintenance. The instance will remain intact but will not be accessible until started again. Users can stop instances when they won't be needed for a period of time, or to troubleshoot issues by performing a clean shutdown.",
+        "responses": {
+          "200": {
+            "description": "Instance stop initiated successfully"
+          }
+        }
+      }
+    },
+    "/instances/{id}/update": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Odoo Instances"],
+        "summary": "Update Odoo instance",
+        "description": "Updates the specified Odoo instance with a new commit. This endpoint allows you to update your Odoo instance to a specific version or commit, useful for applying security patches, bug fixes, or new features. The instance status will be set to 'modifying' during the update process.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance you want to update\n- `commit_sha`: The Git commit SHA representing the version you want to update to\n",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "commit_sha": {
+                    "type": "string",
+                    "description": "Git commit SHA to update the instance to"
+                  }
+                },
+                "required": ["commit_sha"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Instance update initiated successfully"
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "404": {
+            "description": "Instance not found"
+          }
+        }
+      }
+    },
+    "/instances/{id}/start": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Odoo Instances"],
+        "summary": "Start Odoo instance",
+        "description": "Starts a previously stopped Odoo instance. This endpoint allows you to bring your instance back online after it has been stopped. This is useful for resuming operations on instances that were temporarily shut down to save resources.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance you want to start\n\n**NOTE:** Starting an instance will make it immediately accessible to users. The system will automatically initialize all required services including the Odoo server, database, and web services. It may take a few moments for the instance to become fully operational depending on its size and complexity.",
+        "responses": {
+          "200": {
+            "description": "Instance start initiated successfully"
+          }
+        }
+      }
+    },
+
+    "/instances/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "tags": ["Odoo Instances"],
+        "summary": "Delete Odoo instance",
+        "description": "Permanently deletes the specified Odoo instance. This operation cannot be undone and will remove all data associated with the instance, including databases, file storage, and configuration. This endpoint is useful when instances are no longer needed or when cleaning up testing environments.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance you want to delete\n\n**NOTE:** This is a permanent operation and cannot be undone. Always create a backup before deleting an instance if you might need the data in the future. The deletion process runs asynchronously and may take several minutes to complete for large instances.",
+        "responses": {
+          "200": {
+            "description": "Instance deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "ok"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Instance not found"
+          }
+        }
+      }
+    },
+
+    "/instances/{id}/logs": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "Range",
+          "in": "header",
+          "description": "Request a specific range of the log file (e.g., 'bytes=0-1000')",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Instance Logs"],
+        "summary": "Get instance logs",
+        "description": "Retrieves the Odoo server logs for the specified instance. This endpoint allows you to monitor application activity, troubleshoot issues, and diagnose errors in your Odoo instance. You can use the Range header to request specific portions of the log file, which is useful for large log files or continuous monitoring. Note that this endpoint requires the instance's cloud server to have the Logs capability enabled.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance whose logs you want to retrieve",
+        "responses": {
+          "200": {
+            "description": "Full log content retrieved successfully",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Partial log content retrieved successfully",
+            "headers": {
+              "Content-Range": {
+                "schema": {
+                  "type": "string",
+                  "example": "bytes 0-1000/5000"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied or logs capability not enabled"
+          },
+          "404": {
+            "description": "Instance not found"
+          }
+        }
+      },
+      "head": {
+        "tags": ["Instance Logs"],
+        "summary": "Check instance logs availability",
+        "description": "Checks the availability and metadata of the log file without retrieving its content. This is useful to determine the size of the log file or check if logs are available before downloading them. The response will include the same headers as the GET method but without the response body.",
+        "responses": {
+          "200": {
+            "description": "Log file exists and is accessible"
+          },
+          "403": {
+            "description": "Access denied or logs capability not enabled"
+          },
+          "404": {
+            "description": "Instance not found or log file not available"
+          }
+        }
+      }
+    },
+    "/instances/{id}/installed-modules": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Instance Modules"],
+        "summary": "Get installed Odoo modules",
+        "description": "Retrieves a list of all modules currently installed on the specified Odoo instance. This endpoint returns detailed information about both standard and custom modules, including their status, version, and installation state. This is useful for auditing your instance, verifying module installations, and planning upgrades.\n\n**Key Parameters:**\n- `id`: The unique identifier of the instance whose installed modules you want to check\n",
+        "responses": {
+          "200": {
+            "description": "Installed modules retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Instance not found"
+          }
+        }
+      }
+    },
+    "/instances/{id}/modules": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Instance Modules"],
+        "summary": "Add instance module",
+        "description": "Adds a new module to an Odoo instance. This is a Git repository module. The module will be installed on the specified instance. This endpoint allows you to extend your Odoo instance with custom or third-party modules. The installation process is managed asynchronously, and you can track the module status within the UI.\n\n**Key Parameters:**\n- `id`: Instance id to which you want to add the module. \n- `repo`: Repository URL or identifier for the module (e.g., 'https://github.com/OCA/web.git')\n- `branch`: Branch name of the repository to use (e.g., '16.0', '17.0')\n- `type`: Module type ('git' or 'file') - defaults to 'git' if not specified\n- `init`: Optional module name to initialize if different from repository name\n\nNOTE: All pre-fill values are examples and should be replaced with actual data. You can leave optional fields empty if you don't need them.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "repo": {
+                    "type": "string",
+                    "description": "Repository URL or identifier for the module",
+                    "example": "https://github.com/OCA/web.git"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "description": "Branch name of the repository to use",
+                    "example": "16.0"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Module type (git or file)",
+                    "enum": ["git", "file"],
+                    "default": "git",
+                    "example": "git"
+                  },
+                  "init": {
+                    "type": "string",
+                    "description": "Module name to initialize (if different from repository name)",
+                    "example": "web_enterprise"
+                  }
+                },
+                "required": ["repo", "branch"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Module installation initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "The ID of the newly created module"
+                    },
+                    "repo": {
+                      "type": "string",
+                      "description": "Repository URL or identifier"
+                    },
+                    "branch": {
+                      "type": "string",
+                      "description": "Branch name"
+                    },
+                    "dirs": {
+                      "type": "string",
+                      "description": "Current dirs of the module"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Instance not found"
+          }
+        }
+      }
+    },
+    "/instances/{id}/modules/{moduleId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Instance id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "moduleId",
+          "in": "path",
+          "description": "Module id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Instance Modules"],
+        "summary": "Update module code",
+        "description": "Updates the module code to a specified branch. This endpoint is used to change the version or branch of an installed module. The module status will be set to 'updating' during this process. This is useful when you need to upgrade a module to a newer version or switch to a different feature branch.\n\n**Key Parameters:**\n- `id`: The ID of the instance containing the module\n- `moduleId`: The ID of the module to update\n- `branch`: The new branch to switch to (e.g., '16.0', '17.0') - typically corresponds to Odoo version\n\nNOTE: The update process runs asynchronously and may take some time to complete depending on the module size.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branch": {
+                    "type": "string",
+                    "description": "New branch to switch the module to",
+                    "example": "17.0"
+                  }
+                },
+                "required": ["branch"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Module update initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "ok"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Instance or module not found"
+          }
+        }
+      },
+
+      "patch": {
+        "tags": ["Instance Modules"],
+        "summary": "Update module properties",
+        "description": "Updates specific properties of an installed module. This endpoint allows changing settings such as auto-upgrade preferences without reinstalling the module. Changes are applied to the module configuration immediately.\n\n**Key Parameters:**\n- `id`: The ID of the instance containing the module\n- `moduleId`: The ID of the module to update\n- `auto_upgrade`: Boolean flag to enable/disable automatic upgrades for this module",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "auto_upgrade": {
+                    "type": "boolean",
+                    "description": "Enable or disable automatic upgrades for this module",
+                    "example": true
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Module properties updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "ok"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Instance or module not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Instance Modules"],
+        "summary": "Delete module",
+        "description": "Removes a module from the Odoo instance. This will uninstall the module from Odoo and remove its files from the server. This action cannot be undone, so make sure you have a backup if needed. Module deletion is useful when you no longer need specific functionality or are replacing a module with an alternative solution.\n\n**Key Parameters:**\n- `id`: The ID of the instance containing the module\n- `moduleId`: The ID of the module to update\n\nNOTE: This action cannot be undone, and all data associated with the module will be permanently deleted.",
+        "responses": {
+          "200": {
+            "description": "Module deletion initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "ok"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Instance or module not found"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List all users",
+        "description": "Get a complete list of all users based on your access level. This gives you an overview of everyone who can access your Odoo instances, along with their roles, permissions, and account details. Perfect for auditing your team members and managing who has access to what.\n\n**Returns Information About:**\n- User email addresses\n- Assigned roles and specific permissions\n- Account details like creation date and last login time\n- Verification status\n\n NOTE: Results may vary depending on your access level.",
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                },
+                "example": [
+                  {
+                    "role": "admin",
+                    "permissions": null,
+                    "email": "admin@email.com",
+                    "emailVerified": true,
+                    "metadata": {
+                      "createdAt": "2023-10-17T19:54:59+00:00",
+                      "lastLoginAt": "2023-02-06T11:45:56+00:00",
+                      "passwordUpdatedAt": "2023-10-18T08:19:28+00:00",
+                      "lastRefreshAt": "2023-02-14T22:15:59+00:00"
+                    },
+                    "mfaInfo": null,
+                    "uid": "89ZPPREEKUTGIddKRqK0og7BX2"
+                  },
+                  {
+                    "role": "user",
+                    "permissions": {"instances": ["instance-id-1", "instance-id-2"]},
+                    "email": "user@example.com",
+                    "emailVerified": true,
+                    "metadata": {
+                      "createdAt": "2023-11-05T14:27:33+00:00",
+                      "lastLoginAt": "2023-02-12T09:43:21+00:00",
+                      "passwordUpdatedAt": "2023-11-06T10:15:42+00:00",
+                      "lastRefreshAt": "2023-02-14T08:22:17+00:00"
+                    },
+                    "mfaInfo": null,
+                    "uid": "7YXMq2rNPOTlfRsSt9pJwzAx1F"
+                  }
+                ]
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions to view users"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Create a new user",
+        "description": "Add a new team member to your Account with just a few steps. You can create accounts for colleagues, clients, or contractors, and control exactly what they can access by assigning specific roles. The new user will receive immediate access to your system based on the permissions you grant them.\n\n**Key Parameters:**\n- `email`: Email address for the new user\n- `password`: Initial password for the user's account\n- `role`: Access level to assign (e.g., 'Administrator' for admin level access, 'Full' for complete access, 'Readonly' for limited access, 'custom' for customizing access level)\n\nNOTE: You must have administrator privileges to add new users. Choose a strong password for security, and be mindful of the role you assign as it determines what actions the user can perform.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": "Email address for the new user account",
+                    "example": "newuser@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Initial password for the user account",
+                    "example": "SecureP@ssword123"
+                  },
+                  "role": {
+                    "type": "string",
+                    "description": "Role to assign to the user within the tenant",
+                    "example": "USER"
+                  }
+                },
+                "required": ["email", "password", "role"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uid": {
+                      "type": "string",
+                      "description": "Unique identifier for the newly created user"
+                    }
+                  }
+                },
+                "example": {
+                  "uid": "e5c8f0ae-7c4d-45d2-b7a3-5f9b35e1c3c2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data (e.g., email already exists or invalid password)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "example": {
+                  "errors": {
+                    "email": "The email address is already in use"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (requires admin privileges)"
+          }
+        }
+      }
+    },
+
+    "/users/{id}/reset-password": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "User ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": ["Users"],
+        "summary": "Send password reset email",
+        "description": "Help a user who has forgotten their password by sending them a secure reset link. The system will email the user with instructions on how to create a new password. This feature is perfect for supporting team members who are locked out of their accounts.\n\n NOTE: The password reset link will be sent directly to the user's registered email address and will expire after a limited time for security. After resetting their password, the user will be directed to the login page.",
+        "responses": {
+          "200": {
+            "description": "Password reset email sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uid": {
+                      "type": "string",
+                      "description": "Unique identifier of the user"
+                    }
+                  }
+                },
+                "example": {
+                  "uid": "e5c8f0ae-7c4d-45d2-b7a3-5f9b35e1c3c2"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (requires admin privileges)"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "User ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update user access level",
+        "description": "Adjust a user's access level within your Account. This lets you promote users to administrators, restrict access for certain team members, or create custom permission sets for specific servers and instances. Any changes you make take effect immediately.\n\n**Key Parameters:**\n- `role`: New role to assign to this user (e.g., 'admin', 'full', 'readonly', 'custom').\n- `permissions`: Optional object specifying custom access levels for specific resources when using the 'custom' role type.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "description": "Role to assign to the user",
+                    "enum": ["admin", "full", "readonly", "custom"],
+                    "example": "custom"
+                  },
+                  "permissions": {
+                    "type": "object",
+                    "description": "Custom permissions configuration (required when role is 'custom')",
+                    "additionalProperties": {
+                      "type": "string",
+                      "description": "Permission level for specific resources"
+                    },
+                    "example": {
+                      "clouds_550e8400-e29b-41d4-a716-446655440000": "admin",
+                      "clouds_c2e36700-a18f-48bc-9092-d09c335f4fa8": "readonly",
+                      "instances_550e8400-e29b-41d4-a716-446655440000": "full",
+                      "instances_c2e36700-a18f-48bc-9092-d09c335f4fa8": "readonly"
+                    }
+                  }
+                },
+                "required": ["role"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uid": {
+                      "type": "string",
+                      "description": "Unique identifier of the updated user"
+                    }
+                  }
+                },
+                "example": {
+                  "uid": "e5c8f0ae-7c4d-45d2-b7a3-5f9b35e1c3c2"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (requires admin privileges)"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete a user",
+        "description": "Remove a user's access to your tenant completely. Use this when someone leaves your team or no longer needs access to your Odoo instances. Once deleted, the user will immediately lose all access to your systems.\n\n NOTE: This action cannot be undone! The user account will be permanently removed from your tenant. If the person needs access again in the future, you'll need to create a new account for them.",
+        "responses": {
+          "200": {
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uid": {
+                      "type": "string",
+                      "description": "Unique identifier of the deleted user"
+                    }
+                  }
+                },
+                "example": {
+                  "uid": "e5c8f0ae-7c4d-45d2-b7a3-5f9b35e1c3c2"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions (requires admin privileges)"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": [
+
+      ]
+    }
+  ],
+  "components": {
+    "schemas": {
+      "BackupSchedule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the backup schedule"
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the Odoo instance this schedule belongs to"
+          },
+          "schedule": {
+            "type": "string",
+            "description": "Cron expression defining when the backup should run. Format: 'minute hour day-of-month month day-of-week'. Also supports special values like @daily, @weekly, @monthly.",
+            "example": "00 08 * * *"
+          },
+          "retention": {
+            "type": "integer",
+            "description": "Number of days to retain backups created by this schedule"
+          },
+          "providerId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the backup provider to use (null means default provider)",
+            "nullable": true
+          }
+        }
+      },
+      "InstanceTemplate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the instance template"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the template"
+          },
+          "schedules": {
+            "type": "object",
+            "description": "Backup schedule configurations",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "schedule": {
+                  "type": "string",
+                  "description": "Cron expression defining when the backup should run. Format: 'minute hour day-of-month month day-of-week'. Special values such as @daily, @weekly, and @monthly are also supported.",
+                  "example": "00 00 * * *"
+                },
+                "retention": {
+                  "type": "integer",
+                  "description": "Number of days to retain the backup. Common values: 7 (one week), 30 (one month), 90 (three months), 365 (one year)."
+                }
+              }
+            }
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether this template is the default for the tenant"
+          }
+        }
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "settings": {
+            "type": "object"
+          }
+        }
+      },
+      "Backup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "instance": {
+            "$ref": "#/components/schemas/Instance"
+          },
+          "status": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional notes about the backup"
+          }
+        }
+      },
+      "Instance": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "aliasDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "features": {
+            "type": "object",
+            "properties": {
+              "autoUpdate": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "repo": {
+                  "type": "string"
+                },
+                "branch": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "server": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "providerId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "features": {
+                "type": "object",
+                "properties": {
+                  "autoUpdate": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "autoUpgradeDiskPercent": {
+                    "type": "object"
+                  },
+                  "autoUpgradeDiskSize": {
+                    "type": "object"
+                  },
+                  "geoIP": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "status": {
+                "type": "string"
+              },
+              "lastHeartbeat": {
+                "type": "string"
+              },
+              "odoo_version": {
+                "type": "string"
+              },
+              "osId": {
+                "type": "string"
+              },
+              "ipV4": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "uid": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "displayName": {
+            "type": "string",
+            "required": false
+          },
+          "phoneNumber": {
+            "type": "string",
+            "required": false
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "createdAt": {
+                "type": "string"
+              },
+              "lastLoginAt": {
+                "type": "string"
+              },
+              "passwordUpdatedAt": {
+                "type": "string"
+              },
+              "lastRefreshAt": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Quota": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "value": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
