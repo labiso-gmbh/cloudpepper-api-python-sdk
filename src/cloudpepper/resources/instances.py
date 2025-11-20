@@ -1,18 +1,21 @@
+from typing import List
 from ..client import Cloudpepper
 from .base import APIResource
+from ..models import Instance, InstanceDetail, InstanceCreate
 
 class Instances(APIResource):
     def __init__(self, client: Cloudpepper):
         super().__init__(client.client)
 
-    async def list(self):
-        return await self._get("/instances")
+    async def list(self) -> List[Instance]:
+        data = await self._get("/instances")
+        return [Instance(**item) for item in data]
 
-    async def create(self, **kwargs):
-        return await self._post("/instances", json=kwargs)
+    async def create(self, instance: InstanceCreate) -> InstanceDetail:
+        return InstanceDetail(**await self._post("/instances", json=instance.dict()))
 
-    async def get(self, instance_id: str):
-        return await self._get(f"/instances/{instance_id}")
+    async def get(self, instance_id: str) -> InstanceDetail:
+        return InstanceDetail(**await self._get(f"/instances/{instance_id}"))
 
     async def delete(self, instance_id: str):
         return await self._delete(f"/instances/{instance_id}")
