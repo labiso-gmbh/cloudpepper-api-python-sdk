@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cloudpepper"
+version = "0.0.1"
+authors = [
+  { name="Lars Labisch", email="lars@labisch.de" },
+]
+description = "A modern and pythonic Python SDK for the Cloudpepper API."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "httpx",
+    "pydantic",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/labiso-gmbh/cloudpepper-api-python-sdk"
+"Bug Tracker" = "https://github.com/labiso-gmbh/cloudpepper-api-python-sdk/issues"
